@@ -84,6 +84,9 @@
       window.plotPoint(N[k], (sign < 0 ? red : blue));
     }
 
+    var trainedLine = window.weightsToLine(pla._weights ,plane);
+    window.plotLine(trainedLine, redPen);
+
     for(var l = 0; l < numberOfErrorTestPoint; l++) {
       var randomPoint = plane.randomPoint();
       if(plane.getOutput(randomPoint) !== pla.getOutput(randomPoint)) errorPointCount += 1;
@@ -110,14 +113,14 @@
 
     var numberOfErrorTestPoint = 100000;
     var errorPointCount = 0;
-    var weightsBefore = currentPLA._weights;
+
+    var weightsBefore = $.extend([],currentPLA._weights);
     var randomPoint = currentPlane.randomPoint();
     var sign = currentPLA.getOutput(randomPoint);
 
     while(!currentPLA.train(randomPoint, currentPlane.getOutput(randomPoint))) {
       randomPoint = currentPlane.randomPoint();
     }
-    
 
     for(var m = 0; m < numberOfErrorTestPoint; m++) {
       var testErrorPoint = currentPlane.randomPoint();
