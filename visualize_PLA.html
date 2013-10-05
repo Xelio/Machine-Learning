@@ -1,0 +1,207 @@
+<html>
+<head>
+</head>
+<body>
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script type="text/JavaScript" src="jsDraw2D.js"></script>
+<script type="text/JavaScript" src="PLA.js"></script>
+<div id="control">
+  <div>
+    <label for="N">N = </label>
+    <input type="text" name="N" id="N" value="100" />
+  <button id="train">Train until all N correct</button>
+  </div>
+  <div>
+    <button id="step">Train one misclassified point</button>
+  </div>
+  <div>
+    <button id="reset">Reset</button>
+  </div>
+</div>
+<div id="canvas" style="position:relative;width:500px;height:500px;" />
+<script type="text/JavaScript">
+
+  window.red = new jsColor("red");
+  window.redPen = new jsPen(red,1);
+  window.blue = new jsColor("blue");
+  window.bluePen = new jsPen(blue,1);
+  window.black = new jsColor("black");
+  window.blackPen = new jsPen(black,1);
+
+  window.smallFont = new jsFont("sans-serif", "normal", "x-small");
+
+  window.initCanvas = function() {
+    if(window.gr && window.gr.clear) window.gr.clear();
+    window.gr = new jsGraphics(document.getElementById("canvas"));
+    window.gr.setOrigin(new jsPoint(250,250));
+    window.gr.setScale(200);
+    window.gr.setCoordinateSystem("cartecian"); 
+    window.gr.showGrid(1);
+  }
+
+  window.plotLine = function(points, pen) {
+    window.gr.drawLine(pen ? pen : blackPen,
+    new jsPoint(points[0][0],points[0][1]),
+    new jsPoint(points[1][0],points[1][1])); 
+  }
+  window.plotPoint = function(point, color) {
+    window.gr.fillCircle(color,new jsPoint(point[0],point[1]),0.01);
+  }
+</script>
+
+<script type="text/JavaScript">
+  window.untilFit = function(NumberOfN) {
+    var plane = new window.TestPlane(-1,1,-1,1);
+    var N = [];
+    var pla = new window.PLA([0,0,0], function(x) {return Math.sign(x);});
+    var numberOfErrorTestPoint = 100000;
+    var errorPointCount = 0;
+
+    window.initCanvas();
+    window.plotLine(plane._line);
+    window.plotPoint(plane._line[0], red);
+    window.plotPoint(plane._line[1], blue);
+
+    for(var i = 0; i < NumberOfN; i++) {
+      N.push(plane.randomPoint());
+    }
+
+    var incorrectCount = 1;
+    while(incorrectCount !== 0) {
+      var randomPoint = plane.randomPoint();
+      while(!pla.train(randomPoint, plane.getOutput(randomPoint))) {
+        randomPoint = plane.randomPoint();
+      }
+
+      incorrectCount = 0;
+      for(var j in N) {
+        if(plane.getOutput(N[j]) !== pla.getOutput(N[j])) incorrectCount += 1;
+      }
+    }
+
+    for(var k = 0; k < N.length; k++) {
+      var sign = pla.getOutput(N[k]);
+      window.plotPoint(N[k], (sign < 0 ? red : blue));
+    }
+
+    for(var l = 0; l < numberOfErrorTestPoint; l++) {
+      var randomPoint = plane.randomPoint();
+      if(plane.getOutput(randomPoint) !== pla.getOutput(randomPoint)) errorPointCount += 1;
+    }
+
+    var weightsRounded = [];
+    for(var m in pla._weights) {
+      weightsRounded.push(pla._weights[m].toFixed(4));
+    }
+
+    var label = 'Weights: ' + weightsRounded.join(', ') + '<br />'
+              + 'Iteration: ' + pla._iteration + '<br />'
+              + 'Error rate: ' + errorPointCount/numberOfErrorTestPoint;
+
+    window.gr.drawText(label, new jsPoint(-1, 1.24), smallFont, black, 1, 'center');
+
+    return {weights: pla._weights, iteration: pla._iteration, errorRate: errorPointCount/numberOfErrorTestPoint};
+  }
+
+  window.trainOnce = function() {
+    if(!window.currentPLA) window.currentPLA = new window.PLA([0,0,0], function(x) {return Math.sign(x);});
+    if(!window.currentPlane) window.currentPlane = new window.TestPlane(-1,1,-1,1);
+    if(!window.trainedPoint) window.trainedPoint = [];
+
+    var numberOfErrorTestPoint = 100000;
+    var errorPointCount = 0;
+    var weightsBefore = currentPLA._weights;
+    var randomPoint = currentPlane.randomPoint();
+    var sign = currentPLA.getOutput(randomPoint);
+
+    while(!currentPLA.train(randomPoint, currentPlane.getOutput(randomPoint))) {
+      randomPoint = currentPlane.randomPoint();
+    }
+    
+
+    for(var m = 0; m < numberOfErrorTestPoint; m++) {
+      var testErrorPoint = currentPlane.randomPoint();
+      if(currentPlane.getOutput(testErrorPoint) !== currentPLA.getOutput(testErrorPoint)) errorPointCount += 1;
+    }
+
+    // Redraw
+    window.initCanvas();
+    window.plotLine(currentPlane._line);
+    window.plotPoint(currentPlane._line[0], red);
+    window.plotPoint(currentPlane._line[1], blue);
+
+    for(var i in window.trainedPoint) {
+      window.plotPoint(window.trainedPoint[i], black);
+    }
+
+    window.trainedPoint.push(randomPoint);
+    window.plotPoint(randomPoint, (sign < 0 ? red : blue));
+
+    var trainedLine = window.weightsToLine(window.currentPLA._weights ,currentPlane);
+    window.plotLine(trainedLine, redPen);
+
+    var weightsBeforeRounded = [];
+    for(var j in weightsBefore) {
+      weightsBeforeRounded.push(weightsBefore[j].toFixed(4));
+    }
+
+    var weightsRounded = [];
+    for(var k in currentPLA._weights) {
+      weightsRounded.push(currentPLA._weights[k].toFixed(4));
+    }
+    
+    var randomPointRounded = [];
+    for(var l in randomPoint) {
+      randomPointRounded.push(randomPoint[l].toFixed(4));
+    }
+
+    var label1 = 'Weights before: ' + weightsBeforeRounded.join(', ') + '<br />'
+              + 'Weights after: ' + weightsRounded.join(', ') + '<br />'
+              + 'Train point: ' + randomPointRounded.join(', ');
+
+    var label2 = 'Iteration: ' + currentPLA._iteration + '<br />'
+               + 'Error rate: ' + errorPointCount/numberOfErrorTestPoint;
+
+    window.gr.drawText(label1, new jsPoint(-1, 1.24), smallFont, black, 1, 'center');
+    window.gr.drawText(label2, new jsPoint(0, 1.24), smallFont, black, 1, 'center');
+
+  }
+
+  window.weightsToLine = function(weights, plane) {
+    var y_on_x_min = -1 * (weights[1] * plane._x_min + weights[0]) / weights[2];
+    var y_on_x_max = -1 * (weights[1] * plane._x_max + weights[0]) / weights[2];
+    var x_on_y_min = -1 * (weights[2] * plane._y_min + weights[0]) / weights[1];
+    var x_on_y_max = -1 * (weights[2] * plane._y_max + weights[0]) / weights[1];
+
+    var result = [];
+
+    if(y_on_x_min >= plane._y_min && y_on_x_min <= plane._y_max) {
+      result.push([plane._x_min, y_on_x_min]);
+    }
+    if(y_on_x_max >= plane._y_min && y_on_x_max <= plane._y_max) {
+      result.push([plane._x_max, y_on_x_max]);
+    }
+    if(x_on_y_min >= plane._x_min && x_on_y_min <= plane._x_max) {
+      result.push([x_on_y_min, plane._y_min]);
+    }
+    if(x_on_y_max >= plane._x_min && x_on_y_max <= plane._x_max) {
+      result.push([x_on_y_max, plane._y_max]);
+    }
+  if(result.length !== 2) result = [[0,0,],[0,0]];
+  return result;
+  }
+
+  window.reset = function() {
+    window.currentPLA = null;
+  window.currentPlane = null;
+  window.trainedPoint = null;
+    window.initCanvas();
+  }
+
+  window.initCanvas();
+  $('#train').on('click', function() { window.untilFit($('#N').val()); });
+  $('#step').on('click', function() { window.trainOnce(); });
+  $('#reset').on('click', function() { window.reset(); });
+</script>
+</body>
+</html>
