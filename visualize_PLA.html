@@ -9,10 +9,11 @@
   <div>
     <label for="N">N = </label>
     <input type="text" name="N" id="N" value="100" />
-  <button id="train">Train until all N correct</button>
   </div>
   <div>
+    <button id="train">Train until all N correct</button>
     <button id="step">Train one misclassified point</button>
+    <button id="animate">Animating the training</button>
   </div>
   <div>
     <button id="reset">Reset</button>
@@ -21,23 +22,27 @@
 <div id="canvas" style="position:relative;width:500px;height:500px;" />
 <script type="text/JavaScript">
 
-  window.red = new jsColor("red");
+  window.red = new jsColor('red');
   window.redPen = new jsPen(red,1);
-  window.blue = new jsColor("blue");
+  window.blue = new jsColor('blue');
   window.bluePen = new jsPen(blue,1);
-  window.black = new jsColor("black");
+  window.black = new jsColor('black');
   window.blackPen = new jsPen(black,1);
-  window.green = new jsColor("green");
-  window.greenPen = new jsPen(green,4);
+  window.orange = new jsColor('#FFCC33');
+  window.orangePen = new jsPen(orange,4);
+  window.green = new jsColor('#00AA00');
+  window.greenPen = new jsPen(green,2);
+  window.pink = new jsColor('#F19CBB');
+  window.pinkPen = new jsPen(pink,1);
 
-  window.smallFont = new jsFont("sans-serif", "normal", "x-small");
+  window.smallFont = new jsFont('sans-serif', 'normal', 'x-small');
 
   window.initCanvas = function() {
     if(window.gr && window.gr.clear) window.gr.clear();
-    window.gr = new jsGraphics(document.getElementById("canvas"));
+    window.gr = new jsGraphics(document.getElementById('canvas'));
     window.gr.setOrigin(new jsPoint(250,250));
     window.gr.setScale(200);
-    window.gr.setCoordinateSystem("cartecian"); 
+    window.gr.setCoordinateSystem('cartecian');
     window.gr.showGrid(1);
   }
 
@@ -56,62 +61,26 @@
 
 <script type="text/JavaScript">
   window.untilFit = function(NumberOfN) {
-    var plane = new window.TestPlane(-1,1,-1,1);
-    var N = [];
-    var pla = new window.PLA([0,0,0], function(x) {return Math.sign(x);});
-    var numberOfErrorTestPoint = 100000;
-    var errorPointCount = 0;
-
-    window.initCanvas();
-    window.plotLine(plane._line);
-
-    for(var i = 0; i < NumberOfN; i++) {
-      N.push(plane.randomPoint());
+    var callback = function(completed) {
+      if(!completed) window.trainOnce(NumberOfN, true, callback);
     }
 
-    var incorrectPoints = [];
-    do {
-      incorrectPoints = [];
-      for(var i in N) {
-        if(plane.getOutput(N[i]) !== pla.getOutput(N[i])) {
-          incorrectPoints.push(N[i]);
-        }
-      }
-
-      if(incorrectPoints.length !== 0) {
-        var incorrectPoint = incorrectPoints[Math.floor(Math.random() * incorrectPoints.length)];
-        pla.train(incorrectPoint, plane.getOutput(incorrectPoint))
-      }
-    } while(incorrectPoints.length !== 0)
-
-    for(var k = 0; k < N.length; k++) {
-      var sign = pla.getOutput(N[k]);
-      window.plotPoint(N[k], (sign < 0 ? red : blue));
-    }
-
-    var trainedLine = window.weightsToLine(pla._weights ,plane);
-    window.plotLine(trainedLine, redPen);
-
-    for(var l = 0; l < numberOfErrorTestPoint; l++) {
-      var randomPoint = plane.randomPoint();
-      if(plane.getOutput(randomPoint) !== pla.getOutput(randomPoint)) errorPointCount += 1;
-    }
-
-    var weightsRounded = [];
-    for(var m in pla._weights) {
-      weightsRounded.push(pla._weights[m].toFixed(4));
-    }
-
-    var label = 'Weights: ' + weightsRounded.join(', ') + '<br />'
-              + 'Iteration: ' + pla._iteration + '<br />'
-              + 'Error rate: ' + errorPointCount/numberOfErrorTestPoint;
-
-    window.gr.drawText(label, new jsPoint(-1, 1.24), smallFont, black, 1, 'center');
-
-    return {weights: pla._weights, iteration: pla._iteration, errorRate: errorPointCount/numberOfErrorTestPoint};
+    window.reset();
+    window.trainOnce(NumberOfN, true, callback);
   }
 
-  window.trainOnce = function(NumberOfN) {
+  window.animateTraining = function(NumberOfN) {
+    console.log('animateTraining');
+    var callback = function(completed) {
+      if(!completed) window.timer = setTimeout(function() {window.trainOnce(NumberOfN, false, callback)}, 500);;
+    }
+
+    window.reset();
+    window.trainOnce(NumberOfN, false, callback);
+  }
+
+  window.trainOnce = function(NumberOfN, onlyDrawResult, callback) {
+    // Initialize
     if(!window.currentPLA) window.currentPLA = new window.PLA([0,0,0], function(x) {return Math.sign(x);});
     if(!window.currentPlane) window.currentPlane = new window.TestPlane(-1,1,-1,1);
     if(!window.currentN) {
@@ -122,67 +91,77 @@
     }
     if(!window.trainedPoint) window.trainedPoint = [];
 
-    // Stop if all points are correct
+    // Check training finish
     var incorrectPoints = [];
     for(var i in currentN) {
       if(currentPlane.getOutput(currentN[i]) !== currentPLA.getOutput(currentN[i])) {
         incorrectPoints.push(currentN[i]);
       }
     }
-    if(incorrectPoints.length === 0) return;
-    console.log(incorrectPoints.length);
 
-    var weightsBefore = $.extend([],currentPLA._weights);
+    if(incorrectPoints.length !== 0) {
+      var weightsBefore = $.extend([],currentPLA._weights);
 
-    var incorrectPoint = incorrectPoints[Math.floor(Math.random() * incorrectPoints.length)];
-    var expectedOutput = currentPlane.getOutput(incorrectPoint);
-    console.log(currentPLA.train(incorrectPoint, expectedOutput));
-
-    var numberOfErrorTestPoint = 100000;
-    var errorPointCount = 0;
-    for(var m = 0; m < numberOfErrorTestPoint; m++) {
-      var testErrorPoint = currentPlane.randomPoint();
-      if(currentPlane.getOutput(testErrorPoint) !== currentPLA.getOutput(testErrorPoint)) errorPointCount += 1;
+      var incorrectPoint = incorrectPoints[Math.floor(Math.random() * incorrectPoints.length)];
+      var expectedOutput = currentPlane.getOutput(incorrectPoint);
+      currentPLA.train(incorrectPoint, expectedOutput);
     }
 
     // Redraw
-    window.initCanvas();
-    window.plotLine(currentPlane._line);
+    if((onlyDrawResult && incorrectPoints.length === 0)
+        ||(!onlyDrawResult && incorrectPoints.length !== 0)) {
+      var numberOfErrorTestPoint = 100000;
+      var errorPointCount = 0;
+      for(var m = 0; m < numberOfErrorTestPoint; m++) {
+        var testErrorPoint = currentPlane.randomPoint();
+        if(currentPlane.getOutput(testErrorPoint) !== currentPLA.getOutput(testErrorPoint)) errorPointCount += 1;
+      }
 
-    var trainedLine = window.weightsToLine(currentPLA._weights ,currentPlane);
-    window.plotLine(trainedLine, redPen);
+      window.initCanvas();
+      var targetLine = window.weightsToLine(currentPlane.lineToWeights(), currentPlane);
+      window.plotLine(targetLine);
 
-    for(var k = 0; k < currentN.length; k++) {
-      var sign = currentPLA.getOutput(currentN[k]);
-      window.plotPoint(currentN[k], (sign < 0 ? red : blue));
+      var trainedLine = window.weightsToLine(currentPLA._weights, currentPlane);
+      window.plotLine(trainedLine, greenPen);
+
+      for(var k = 0; k < currentN.length; k++) {
+        var sign = currentPlane.getOutput(currentN[k]);
+        window.plotPoint(currentN[k], (sign < 0 ? red : blue));
+      }
+
+      if(onlyDrawResult) {
+        var label = 'Weights: ' + window.joinWithRounding(currentPLA._weights,4) + '<br />'
+                  + 'Iteration: ' + currentPLA._iteration + '<br />'
+                  + 'Error rate: ' + errorPointCount/numberOfErrorTestPoint;
+
+        window.gr.drawText(label, new jsPoint(-1, 1.24), smallFont, black, 1, 'center');
+      } else {
+        var beforeTrainedLine = window.weightsToLine(weightsBefore, currentPlane);
+        window.plotLine(beforeTrainedLine, pinkPen);
+
+        window.plotCircle(incorrectPoint, orangePen);
+
+        var label1 = 'Weights before: ' + window.joinWithRounding(weightsBefore,4) + '<br />'
+                  + 'Weights after: ' + window.joinWithRounding(currentPLA._weights,4) + '<br />'
+                  + 'Train point: ' + window.joinWithRounding(incorrectPoint,4);
+
+        var label2 = 'Iteration: ' + currentPLA._iteration + '<br />'
+                   + 'Error rate: ' + errorPointCount/numberOfErrorTestPoint;
+
+        window.gr.drawText(label1, new jsPoint(-1, 1.24), smallFont, black, 1, 'center');
+        window.gr.drawText(label2, new jsPoint(0, 1.24), smallFont, black, 1, 'center');
+      }
     }
 
-    window.plotCircle(incorrectPoint, greenPen);
+    if(callback) callback(incorrectPoints.length === 0);
+  }
 
-    var weightsBeforeRounded = [];
-    for(var j in weightsBefore) {
-      weightsBeforeRounded.push(weightsBefore[j].toFixed(4));
+  window.joinWithRounding = function(input, decimalPoint) {
+    var result = [];
+    for(var i in input) {
+      result.push(input[i].toFixed(decimalPoint));
     }
-
-    var weightsRounded = [];
-    for(var k in currentPLA._weights) {
-      weightsRounded.push(currentPLA._weights[k].toFixed(4));
-    }
-
-    var incorrectPointRounded = [];
-    for(var l in incorrectPoint) {
-      incorrectPointRounded.push(incorrectPoint[l].toFixed(4));
-    }
-
-    var label1 = 'Weights before: ' + weightsBeforeRounded.join(', ') + '<br />'
-              + 'Weights after: ' + weightsRounded.join(', ') + '<br />'
-              + 'Train point: ' + incorrectPointRounded.join(', ');
-
-    var label2 = 'Iteration: ' + currentPLA._iteration + '<br />'
-               + 'Error rate: ' + errorPointCount/numberOfErrorTestPoint;
-
-    window.gr.drawText(label1, new jsPoint(-1, 1.24), smallFont, black, 1, 'center');
-    window.gr.drawText(label2, new jsPoint(0, 1.24), smallFont, black, 1, 'center');
+    return result.join(', ');
   }
 
   window.weightsToLine = function(weights, plane) {
@@ -210,6 +189,7 @@
   }
 
   window.reset = function() {
+    window.clearTimeout(window.timer);
     window.currentPLA = null;
     window.currentPlane = null;
     window.trainedPoint = null;
@@ -220,6 +200,7 @@
   window.initCanvas();
   $('#train').on('click', function() { window.untilFit($('#N').val()); });
   $('#step').on('click', function() { window.trainOnce($('#N').val()); });
+  $('#animate').on('click', function() { window.animateTraining($('#N').val()); });
   $('#reset').on('click', function() { window.reset(); });
 </script>
 </body>

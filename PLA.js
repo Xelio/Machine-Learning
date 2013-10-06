@@ -51,6 +51,20 @@ window.TestPlane.prototype.getOutput = function(input) {
   return output;
 }
 
+window.TestPlane.prototype.lineToWeights = function() {
+  var weights = [];
+  var Ax = this._line[0][0];
+  var Ay = this._line[0][1];
+  var Bx = this._line[1][0];
+  var By = this._line[1][1];
+
+  weights[0] = Ax*(By-Ay) - Ay*(Bx-Ax);
+  weights[1] = -1 * (By-Ay);
+  weights[2] = (Bx-Ax);
+
+  return weights;
+}
+
 window.TestPlane.prototype.randomPoint = function() {
   var x =  this._x_min + Math.random() * (this._x_max - this._x_min);
   var y =  this._y_min + Math.random() * (this._y_max - this._y_min);
