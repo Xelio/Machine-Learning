@@ -28,9 +28,52 @@
     new jsPoint(points[0][0],points[0][1]),
     new jsPoint(points[1][0],points[1][1])); 
   }
+
   window.plotPoint = function(point, color) {
     window.gr.fillCircle(color,new jsPoint(point[0],point[1]),0.01);
   }
+
   window.plotCircle = function(point, pen) {
     window.gr.drawCircle(pen, new jsPoint(point[0],point[1]), 0.02);
+  }
+
+  window.drawDataSet = function(plane, dataSet) {
+    var targetLine = window.weightsToLine(plane.lineToWeights(), plane);
+    window.plotLine(targetLine);
+
+    for(var i = 0; i < dataSet.length; i++) {
+      window.plotPoint(dataSet[i].point, (dataSet[i].output < 0 ? red : blue));
+    }
+  }
+
+  window.weightsToLine = function(weights, plane) {
+    var y_on_x_min = -1 * (weights[1] * plane._x_min + weights[0]) / weights[2];
+    var y_on_x_max = -1 * (weights[1] * plane._x_max + weights[0]) / weights[2];
+    var x_on_y_min = -1 * (weights[2] * plane._y_min + weights[0]) / weights[1];
+    var x_on_y_max = -1 * (weights[2] * plane._y_max + weights[0]) / weights[1];
+
+    var result = [];
+
+    if(y_on_x_min >= plane._y_min && y_on_x_min <= plane._y_max) {
+      result.push([plane._x_min, y_on_x_min]);
+    }
+    if(y_on_x_max >= plane._y_min && y_on_x_max <= plane._y_max) {
+      result.push([plane._x_max, y_on_x_max]);
+    }
+    if(x_on_y_min >= plane._x_min && x_on_y_min <= plane._x_max) {
+      result.push([x_on_y_min, plane._y_min]);
+    }
+    if(x_on_y_max >= plane._x_min && x_on_y_max <= plane._x_max) {
+      result.push([x_on_y_max, plane._y_max]);
+    }
+  if(result.length !== 2) result = [[0,0,],[0,0]];
+  return result;
+  }
+
+  window.joinWithRounding = function(input, decimalPoint) {
+    var result = [];
+    for(var i in input) {
+      result.push(input[i].toFixed(decimalPoint));
+    }
+    return result.join(', ');
   }
