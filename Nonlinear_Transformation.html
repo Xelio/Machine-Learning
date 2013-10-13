@@ -14,10 +14,26 @@
   <div>
     <label for="N">N = </label>
     <input type="text" name="N" id="N" value="1000" />
-  </div>
-  <div>
     <label for="testTimes">Test times = </label>
     <input type="text" name="testTimes" id="testTimes" value="1000" />
+  </div>
+  <br />
+  <div>
+    <div>f(x,y) = sign(a + b*x + c*y + d*x*y + e*x^2 + f*y^2)</div>
+    <span>
+      <label for="c_a">a = </label>
+      <input type="text" name="c_a" id="c_a" value="-0.1" size=4/>
+      <label for="c_b">b = </label>
+      <input type="text" name="c_b" id="c_b" value="0" size=4/>
+      <label for="c_c">c = </label>
+      <input type="text" name="c_c" id="c_c" value="0" size=4/>
+      <label for="c_d">d = </label>
+      <input type="text" name="c_d" id="c_d" value="6" size=4/>
+      <label for="c_e">e = </label>
+      <input type="text" name="c_e" id="c_e" value="1.5" size=4/>
+      <label for="c_f">f = </label>
+      <input type="text" name="c_f" id="c_f" value="-0.8" size=4/>
+    </span>
   </div>
   <div>
     <div>Without transformation, with vector(1, x, y): </div>
@@ -37,9 +53,17 @@
 </div>
 <div id="canvas" style="position:relative;width:500px;height:500px;left:200px" />
 <script type="text/JavaScript">
-  var f = function(point) {return Math.sign(1.5 * Math.pow(point[0], 2) + 1.5 * Math.pow(point[1], 2) + 5 * point[0] * point[1] + 0.8 * point[0] - 0.6);};
+  var f = function(point) {
+    return Math.sign(
+      (parseFloat($('#c_a').val()) || 0) +
+      (parseFloat($('#c_b').val()) || 0) * point[0] +
+      (parseFloat($('#c_c').val()) || 0) * point[1] +
+      (parseFloat($('#c_d').val()) || 0) * point[0] * point[1] +
+      (parseFloat($('#c_e').val()) || 0) * point[0] * point[0] +
+      (parseFloat($('#c_f').val()) || 0) * point[1] * point[1]);
+  };
   var noise = function(point, output) {return -1 * output};
-  var noiseFraction = 0.15;
+  var noiseFraction = 0.18;
   var plane = new window.TestPlane(-1,1,-1,1);
   var transform = function(point) {
     return [point[0],
