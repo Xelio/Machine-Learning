@@ -37,10 +37,12 @@
     window.gr.drawCircle(pen, new jsPoint(point[0],point[1]), 0.02);
   }
 
-  window.drawDataSet = function(plane, dataSet) {
+  window.drawTargetLine = function(plane) {
     var targetLine = window.weightsToLine(plane.lineToWeights(), plane);
     window.plotLine(targetLine);
+  }
 
+  window.drawDataSet = function(dataSet) {
     for(var i = 0; i < dataSet.length; i++) {
       window.plotPoint(dataSet[i].point, (dataSet[i].output < 0 ? red : blue));
     }

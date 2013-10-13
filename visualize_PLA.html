@@ -40,7 +40,8 @@
 
     var completeCallback = function(weight, iteration) {
       window.initCanvas();
-      window.drawDataSet(plane, dataSet);
+      window.drawTargetLine(plane)
+      window.drawDataSet(dataSet);
       window.drawComplete(weight, iteration, pla, plane);
     }
 
@@ -55,7 +56,8 @@
 
     var iterationCallback = function(weightCurrent, weightsBefore, iteration, trainedPoint) {
       window.initCanvas();
-      window.drawDataSet(plane, dataSet);
+      window.drawTargetLine(plane)
+      window.drawDataSet(dataSet);
       window.drawIteration(weightCurrent, weightsBefore, iteration, trainedPoint, pla, plane);
       window.timer = setTimeout(function() {pla.trainSet(dataSet, true, iterationCallback);}, 500);;
     }
@@ -72,7 +74,8 @@
 
     var iterationCallback = function(weightCurrent, weightsBefore, iteration, trainedPoint) {
       window.initCanvas();
-      window.drawDataSet(currentPlane, currentDataSet);
+      window.drawTargetLine(currentPlane)
+      window.drawDataSet(currentDataSet);
       window.drawIteration(weightCurrent, weightsBefore, iteration, trainedPoint, currentPLA, currentPlane);
     }
 
