@@ -6,7 +6,7 @@ window.Linear_Regression.prototype.regression = function(dataSet, completeCallba
   var array_X = [];
   var array_Y = [];
   for(var i in dataSet) {
-    array_X.push($.merge([1], dataSet[i].point));
+    array_X.push(dataSet[i].point);
     array_Y.push([dataSet[i].output]);
   }
 

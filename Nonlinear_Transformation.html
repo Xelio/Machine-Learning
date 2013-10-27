@@ -66,11 +66,17 @@
   var noiseFraction = 0.18;
   var plane = new window.TestPlane(-1,1,-1,1);
   var transform = function(point) {
-    return [point[0],
+    return [1,
+            point[0],
             point[1],
             point[0]*point[1],
             Math.pow(point[0], 2),
             Math.pow(point[1], 2)];
+  };
+  var noTransform = function(point) {
+    return [1,
+            point[0],
+            point[1];
   };
 
   window.generateDataSet = function(NumberOfN, plane, outputFunction, noiseFraction, noiseFunction) {
@@ -99,7 +105,7 @@
 
   window.regressionWOTransformation = function(NumberOfN) {
     console.log('regressionWOTransformation');
-    var dataSet = window.generateDataSet(NumberOfN, plane, f, noiseFraction, noise);
+    var dataSet = window.transformDataSet(window.generateDataSet(NumberOfN, plane, f, noiseFraction, noise), noTransform);
     var lr = new window.Linear_Regression();
     
     var completeCallback = function(weight) {
@@ -118,7 +124,7 @@
     console.log('regressionWOTransformationMultiTimes');
     var totalEin = 0;
     for(var i = 0; i < times; i++) {
-      var dataSet = window.generateDataSet(NumberOfN, plane, f, noiseFraction, noise);
+      var dataSet = window.transformDataSet(window.generateDataSet(NumberOfN, plane, f, noiseFraction, noise), noTransform);
       var lr = new window.Linear_Regression();
       lr.regression(dataSet);
       totalEin += window.getErrorFraction(lr, dataSet);
