@@ -1,0 +1,18 @@
+dEu = @(u, v) 2 .* (exp(v) .+ 2 .* v .* exp(-1 .* u)) .* (u .* exp(v) .- 2 .* v .* exp(-1 .* u))
+dEv = @(u, v) 2 .* (u .* exp(v) - 2 .* exp(-1 .* u)) .* (u .* exp(v) .- 2 .* v .* exp(-1 .* u))
+E = @(u, v) (u .* exp(v) .- 2 .* v * exp(-1 .* u)) .^ 2
+
+u = double(1);
+v = double(1);
+c_iter = 0;
+
+while E(u,v) >= 1e-13
+  u_new = u .- 0.1 .* dEu(u, v);
+  v_new = v .- 0.1 .* dEv(u, v);
+  u = u_new;
+  v = v_new;
+  c_iter = c_iter .+ 1
+  E(u,v)
+endwhile
+u
+v
