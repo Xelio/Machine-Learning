@@ -1,3 +1,6 @@
+Math.sign = function(x) {
+  return x ? x < 0 ? -1 : 1 : 0;
+}
 
 window.TestPlane = function(x_min, x_max, y_min, y_max) {
   this._x_min = x_min;

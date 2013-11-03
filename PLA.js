@@ -1,7 +1,3 @@
-Math.sign = function(x) {
-  return x ? x < 0 ? -1 : 1 : 0;
-}
-
 window.PLA = function(weights, modifier) {
   this._weights = weights
   this._modifier = modifier
@@ -11,9 +7,8 @@ window.PLA = function(weights, modifier) {
 window.PLA.prototype.train = function(data) {
   if(data.output === this.getOutput(data.point)) return false;
 
-  this._weights[0] += data.output;
   for(var i = 0; i < data.point.length; i++) {
-    this._weights[i+1] += data.output * data.point[i];
+    this._weights[i] += data.output * data.point[i];
   }
 
   this._iteration += 1;
@@ -45,12 +40,11 @@ window.PLA.prototype.trainSet = function(dataSet, singleIteration, iterationCall
 }
 
 window.PLA.prototype.getOutput = function(point) {
-  if(point.length !== this._weights.length - 1) throw "Dimension of point is not correct"
+  if(point.length !== this._weights.length) throw "Dimension of point is not correct"
 
-  var output;
-  output = this._weights[0];
+  var output = 0;
   for(var i = 0; i < point.length; i++) {
-    output += this._weights[i+1] * point[i];
+    output += this._weights[i] * point[i];
   }
   
   if(typeof(this._modifier) === 'function') output = this._modifier(output);

@@ -73,7 +73,7 @@
             Math.pow(point[0], 2),
             Math.pow(point[1], 2)];
   };
-  var noTransform = function(point) {
+  var add_w0 = function(point) {
     return [1,
             point[0],
             point[1]];
@@ -105,17 +105,18 @@
 
   window.regressionWOTransformation = function(NumberOfN) {
     console.log('regressionWOTransformation');
-    var dataSet = window.transformDataSet(window.generateDataSet(NumberOfN, plane, f, noiseFraction, noise), noTransform);
+    var dataSet = window.generateDataSet(NumberOfN, plane, f, noiseFraction, noise);
+    var dataSetWithw0 = window.transformDataSet(dataSet, add_w0);
     var lr = new window.Linear_Regression();
     
     var completeCallback = function(weight) {
       window.initCanvas();
       window.drawDataSet(dataSet);
-      window.drawRegressionComplete(weight, lr, plane, dataSet);
+      window.drawRegressionComplete(weight, lr, plane, dataSetWithw0);
     }
 
     window.initCanvas();
-    lr.regression(dataSet, completeCallback);
+    lr.regression(dataSetWithw0, completeCallback);
   }
 
 
@@ -124,7 +125,7 @@
     console.log('regressionWOTransformationMultiTimes');
     var totalEin = 0;
     for(var i = 0; i < times; i++) {
-      var dataSet = window.transformDataSet(window.generateDataSet(NumberOfN, plane, f, noiseFraction, noise), noTransform);
+      var dataSet = window.transformDataSet(window.generateDataSet(NumberOfN, plane, f, noiseFraction, noise), add_w0);
       var lr = new window.Linear_Regression();
       lr.regression(dataSet);
       totalEin += window.getErrorFraction(lr, dataSet);

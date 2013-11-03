@@ -30,6 +30,12 @@
 </div>
 <div id="canvas" style="position:relative;width:500px;height:500px;left:200px" />
 <script type="text/JavaScript">
+  var add_w0 = function(point) {
+    return [1,
+            point[0],
+            point[1]];
+  };
+
   window.generateDataSet = function(NumberOfN, plane) {
     var result = [];
     for(var i = 0; i < NumberOfN; i++) {
@@ -40,10 +46,19 @@
     return result;
   }
 
+  window.transformDataSet = function(dataSet, transformFunction) {
+    var result = [];
+    for(var i in dataSet) {
+      result.push({point: transformFunction(dataSet[i].point), output: dataSet[i].output});
+    }
+    return result;
+  }
+
   window.regressionOnce = function(NumberOfN) {
     console.log('regressionOnce');
     var plane = new window.TestPlane(-1,1,-1,1);
     var dataSet = window.generateDataSet(NumberOfN, plane);
+    var dataSetWithw0 = window.transformDataSet(dataSet, add_w0);
     var lr = new window.Linear_Regression();
 
     var completeCallback = function(weight) {
@@ -54,7 +69,7 @@
     }
 
     window.initCanvas();
-    lr.regression(dataSet, completeCallback);
+    lr.regression(dataSetWithw0, completeCallback);
   }
 
   window.regressionMultiTimes = function(NumberOfN, times) {
@@ -66,9 +81,10 @@
     for(var i = 0; i < times; i++) {
       var plane = new window.TestPlane(-1,1,-1,1);
       var dataSet = window.generateDataSet(NumberOfN, plane);
+      var dataSetWithw0 = window.transformDataSet(dataSet, add_w0);
       var lr = new window.Linear_Regression();
-      lr.regression(dataSet);
-      totalEin += window.getErrorInSampleFraction(lr, dataSet);
+      lr.regression(dataSetWithw0);
+      totalEin += window.getErrorInSampleFraction(lr, dataSetWithw0);
       totalEout += window.getErrorOutSampleFraction(lr, plane, 1000);
     }
     var avgEin = totalEin/times;
@@ -84,6 +100,7 @@
     console.log('animateRegressionThenPLA');
     var plane = new window.TestPlane(-1,1,-1,1);
     var dataSet = window.generateDataSet(NumberOfN, plane);
+    var dataSetWithw0 = window.transformDataSet(dataSet, add_w0);
     var lr = new window.Linear_Regression();
     var pla = new window.PLA([0,0,0], function(x) {return Math.sign(x);});
 
@@ -92,20 +109,21 @@
       window.drawTargetLine(plane)
       window.drawDataSet(dataSet);
       window.drawPLAIteration(weightCurrent, weightsBefore, iteration, trainedPoint, pla, plane);
-      window.timer = setTimeout(function() {pla.trainSet(dataSet, true, iterationPLACallback);}, 500);
+      window.timer = setTimeout(function() {pla.trainSet(dataSetWithw0, true, iterationPLACallback);}, 500);
     }
 
     var completeLRCallback = function(weight) {
       window.initCanvas();
       window.drawTargetLine(plane)
       window.drawDataSet(dataSet);
+      window.dataSetWithw0 = window.transformDataSet(dataSet, add_w0);
       window.drawRegressionComplete(weight, lr, plane);
       pla._weights = lr._weights;
-      setTimeout(function() {pla.trainSet(dataSet, true, iterationPLACallback);}, 1500);
+      setTimeout(function() {pla.trainSet(dataSetWithw0, true, iterationPLACallback);}, 1500);
     }
 
     window.initCanvas();
-    lr.regression(dataSet, completeLRCallback);
+    lr.regression(dataSetWithw0, completeLRCallback);
   }
 
   window.regressionThenPLAMultiTimes = function(NumberOfN, times) {
@@ -117,11 +135,12 @@
     for(var i = 0; i < times; i++) {
       var plane = new window.TestPlane(-1,1,-1,1);
       var dataSet = window.generateDataSet(NumberOfN, plane);
+      var dataSetWithw0 = window.transformDataSet(dataSet, add_w0);
       var lr = new window.Linear_Regression();
 
-      lr.regression(dataSet);
+      lr.regression(dataSetWithw0);
       var pla = new window.PLA(lr._weights, function(x) {return Math.sign(x);});
-      pla.trainSet(dataSet, false);
+      pla.trainSet(dataSetWithw0, false);
       totalIteration += pla._iteration
     }
 
@@ -143,7 +162,7 @@
     var errorPointCount = 0;
     for(var i = 0; i < numberOfSample; i++) {
       var testErrorPoint = plane.randomPoint();
-      if(plane.getOutput(testErrorPoint) !== Math.sign(lr.getOutput(testErrorPoint))) errorPointCount += 1;
+      if(plane.getOutput(testErrorPoint) !== Math.sign(lr.getOutput(add_w0(testErrorPoint)))) errorPointCount += 1;
     }
     return errorPointCount / numberOfSample;
   }
@@ -170,7 +189,7 @@
 
     window.plotLine(trainedLine, greenPen);
     window.plotLine(beforeTrainedLine, pinkPen);
-    window.plotCircle(trainedPoint, orangePen);
+    window.plotCircle([trainedPoint[1], trainedPoint[2]], orangePen);
     window.gr.drawText(label1, new jsPoint(-1, 1.24), smallFont, black, 1, 'center');
     window.gr.drawText(label2, new jsPoint(0, 1.24), smallFont, black, 1, 'center');
   }

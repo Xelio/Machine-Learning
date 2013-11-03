@@ -20,12 +20,11 @@ window.Linear_Regression.prototype.regression = function(dataSet, completeCallba
 }
 
 window.Linear_Regression.prototype.getOutput = function(point) {
-  if(point.length !== this._weights.length - 1) throw "Dimension of point is not correct"
+  if(point.length !== this._weights.length) throw "Dimension of point is not correct"
 
-  var output;
-  output = this._weights[0];
+  var output = 0;
   for(var i = 0; i < point.length; i++) {
-    output += this._weights[i+1] * point[i];
+    output += this._weights[i] * point[i];
   }
 
   return output;

@@ -23,6 +23,12 @@
 </div>
 <div id="canvas" style="position:relative;width:500px;height:500px;" />
 <script type="text/JavaScript">
+  var add_w0 = function(point) {
+    return [1,
+            point[0],
+            point[1]];
+  };
+
   window.generateDataSet = function(NumberOfN, plane) {
     var result = [];
     for(var i = 0; i < NumberOfN; i++) {
@@ -33,9 +39,18 @@
     return result;
   }
 
+  window.transformDataSet = function(dataSet, transformFunction) {
+    var result = [];
+    for(var i in dataSet) {
+      result.push({point: transformFunction(dataSet[i].point), output: dataSet[i].output});
+    }
+    return result;
+  }
+
   window.untilFit = function(NumberOfN) {
     var plane = new window.TestPlane(-1,1,-1,1);
     var dataSet = window.generateDataSet(NumberOfN, plane);
+    var dataSetWithw0 = window.transformDataSet(dataSet, add_w0);
     var pla = new window.PLA([0,0,0], function(x) {return Math.sign(x);});
 
     var completeCallback = function(weight, iteration) {
@@ -46,12 +61,13 @@
     }
 
     window.reset();
-    pla.trainSet(dataSet, false, null, completeCallback);
+    pla.trainSet(dataSetWithw0, false, null, completeCallback);
   }
 
   window.animateTraining = function(NumberOfN) {
     var plane = new window.TestPlane(-1,1,-1,1);
     var dataSet = window.generateDataSet(NumberOfN, plane);
+    var dataSetWithw0 = window.transformDataSet(dataSet, add_w0);
     var pla = new window.PLA([0,0,0], function(x) {return Math.sign(x);});
 
     var iterationCallback = function(weightCurrent, weightsBefore, iteration, trainedPoint) {
@@ -59,11 +75,11 @@
       window.drawTargetLine(plane)
       window.drawDataSet(dataSet);
       window.drawIteration(weightCurrent, weightsBefore, iteration, trainedPoint, pla, plane);
-      window.timer = setTimeout(function() {pla.trainSet(dataSet, true, iterationCallback);}, 500);;
+      window.timer = setTimeout(function() {pla.trainSet(dataSetWithw0, true, iterationCallback);}, 500);;
     }
 
     window.reset();
-    pla.trainSet(dataSet, true, iterationCallback);
+    pla.trainSet(dataSetWithw0, true, iterationCallback);
   }
 
   window.trainOnce = function(NumberOfN, onlyDrawResult, callback) {
@@ -71,6 +87,7 @@
     if(!window.currentPLA) window.currentPLA = new window.PLA([0,0,0], function(x) {return Math.sign(x);});
     if(!window.currentPlane) window.currentPlane = new window.TestPlane(-1,1,-1,1);
     if(!window.currentDataSet) window.currentDataSet = window.generateDataSet(NumberOfN, currentPlane);
+    if(!window.currentDataSetWithw0) window.currentDataSetWithw0 = window.transformDataSet(window.currentDataSet, add_w0);
 
     var iterationCallback = function(weightCurrent, weightsBefore, iteration, trainedPoint) {
       window.initCanvas();
@@ -79,7 +96,7 @@
       window.drawIteration(weightCurrent, weightsBefore, iteration, trainedPoint, currentPLA, currentPlane);
     }
 
-    currentPLA.trainSet(currentDataSet, true, iterationCallback);
+    currentPLA.trainSet(currentDataSetWithw0, true, iterationCallback);
   }
 
   window.drawIteration = function(weightCurrent, weightsBefore, iteration, trainedPoint, pla, plane) {
@@ -94,7 +111,7 @@
 
     window.plotLine(trainedLine, greenPen);
     window.plotLine(beforeTrainedLine, pinkPen);
-    window.plotCircle(trainedPoint, orangePen);
+    window.plotCircle([trainedPoint[1], trainedPoint[2]], orangePen);
     window.gr.drawText(label1, new jsPoint(-1, 1.24), smallFont, black, 1, 'center');
     window.gr.drawText(label2, new jsPoint(0, 1.24), smallFont, black, 1, 'center');
   }
@@ -115,7 +132,7 @@
     var errorPointCount = 0;
     for(var i = 0; i < numberOfErrorTestPoint; i++) {
       var testErrorPoint = plane.randomPoint();
-      if(plane.getOutput(testErrorPoint) !== pla.getOutput(testErrorPoint)) errorPointCount += 1;
+      if(plane.getOutput(testErrorPoint) !== pla.getOutput(add_w0(testErrorPoint))) errorPointCount += 1;
     }
     return errorPointCount / numberOfErrorTestPoint;
   }
@@ -125,6 +142,7 @@
     window.currentPLA = null;
     window.currentPlane = null;
     window.currentDataSet = null;
+    window.currentDataSetWithw0 = null;
     window.initCanvas();
   }
 
