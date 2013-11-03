@@ -11,6 +11,7 @@
   window.greenPen = new jsPen(green,2);
   window.pink = new jsColor('#F19CBB');
   window.pinkPen = new jsPen(pink,1);
+  window.pinkPen2 = new jsPen(pink,2);
 
   window.smallFont = new jsFont('sans-serif', 'normal', 'x-small');
 
