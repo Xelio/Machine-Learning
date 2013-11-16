@@ -3,6 +3,10 @@ window.Linear_Regression = function() {
 }
 
 window.Linear_Regression.prototype.regression = function(dataSet, completeCallback) {
+  this.regressionWithRegularization(dataSet, 0, completeCallback);
+}
+
+window.Linear_Regression.prototype.regressionWithRegularization = function(dataSet, lamda, completeCallback) {
   var array_X = [];
   var array_Y = [];
   for(var i in dataSet) {
@@ -13,7 +17,9 @@ window.Linear_Regression.prototype.regression = function(dataSet, completeCallba
   var matrix_X = math.matrix(array_X);
   var matrix_Y = math.matrix(array_Y);
   var matrix_X_traspose = math.transpose(matrix_X);
-  var matrix_X_pseudo_inverse = math.multiply(math.inv(math.multiply(matrix_X_traspose, matrix_X)), matrix_X_traspose)
+  var I = math.diag(math.ones(array_X[0].length));
+  var lamda_I = math.multiply(lamda, I);
+  var matrix_X_pseudo_inverse = math.multiply(math.inv(math.add(math.multiply(matrix_X_traspose, matrix_X), lamda_I)), matrix_X_traspose);
   var weights_matrix = math.multiply(matrix_X_pseudo_inverse, matrix_Y).toArray();
   this._weights = [].concat.apply([], weights_matrix);
   if(completeCallback) completeCallback(this._weights);

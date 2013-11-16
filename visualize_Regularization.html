@@ -1,0 +1,149 @@
+<html>
+<head>
+</head>
+<body>
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script type="text/JavaScript" src="./js/lib/jsDraw2D.js"></script>
+<script type="text/JavaScript" src="./js/drawing.js"></script>
+<script type="text/JavaScript" src="./js/lib/math.min.js"></script>
+<script type="text/JavaScript" src="./js/TestPlane.js"></script>
+<script type="text/JavaScript" src="./js/PLA.js"></script>
+<script type="text/JavaScript" src="./js/Linear_Regression.js"></script>
+<script type="text/JavaScript" src="./js/Quadratic_Function_Solver.js"></script>
+
+<div id="control">
+  <div style="position:relative; width: 700px; height: 160px;">
+    <div style="position:absolute; width: 350px; left: 0;">
+      <textarea id="in_sample" rows="8" cols="40"></textarea>
+      <div><label for="in_sample">In sample</label></div>
+    </div>
+    <div style="position:absolute; width: 350px; left: 350px;">
+      <textarea id="out_sample" rows="8" cols="40"></textarea>
+      <div><label for="out_sample">Out sample</label></div>
+    </div>
+  </div>
+  <div>
+    <label for="k">lamda = 10^k</label>
+    <input type="text" name="k" id="k" value="-3" size="3">
+  </div>
+  <div>
+    <button id="run_lr">Linear Regression</button>
+    <button id="run_lr_reg">Linear Regression(Regularization)</button>
+  </div>
+</div>
+
+<div style="position:relative;">
+  <div style="position:absolute; width: 350px;">
+    <textarea id="status" readonly rows="30" cols="40"></textarea>
+  </div>
+  <div id="canvas" style="position:absolute; width:500px;height:500px;left:350px" />
+</div>
+<script type="text/JavaScript">
+  var lineRegExp = new RegExp(/\s*(\S+)\s+(\S+)\s+(\S+)\s*/);
+  var plane = new window.TestPlane(-1,1,-1,1);
+  var transform = function(point) {
+    return [1,
+            point[0],
+            point[1],
+            Math.pow(point[0], 2),
+            Math.pow(point[1], 2),
+            point[0]*point[1],
+            Math.abs(point[0]-point[1]),
+            Math.abs(point[0]+point[1])];
+  };
+
+  window.transformDataSet = function(dataSet, transformFunction) {
+    var result = [];
+    for(var i in dataSet) {
+      result.push({point: transformFunction(dataSet[i].point), output: dataSet[i].output});
+    }
+    return result;
+  }
+
+  window.lineArray = function(text) {
+    return text.split('\n');
+  }
+
+  window.getDataSetFromLineArray = function(lineArray) {
+    var result = [];
+    for(var i in lineArray) {
+      var line = lineArray[i];
+      if(!line || line === '') continue;
+      var matched = lineRegExp.exec(line);
+      if(!matched) continue;
+       var point = [parseFloat(matched[1]), parseFloat(matched[2])];
+       var output = Math.round(parseFloat(matched[3]));
+       result.push({point: point, output: output});
+    }
+    return result;
+  }
+
+  window.run_lr = function(in_sample_text, out_sample_text) {
+    var dataSet = window.getDataSetFromLineArray(window.lineArray(in_sample_text));
+    var transformedDataSet = window.transformDataSet(dataSet, transform);
+    var outSampleDataSet = window.getDataSetFromLineArray(window.lineArray(out_sample_text));
+    var transformedOutSampleDataSet = window.transformDataSet(outSampleDataSet, transform);
+
+    var lr = new window.Linear_Regression();
+
+    var completeCallback = function(weights) {
+      window.drawDataSet(dataSet);
+
+      var in_error = window.getErrorFraction(lr, transformedDataSet);
+      var out_error = window.getErrorFraction(lr, transformedOutSampleDataSet);
+
+      window.displayRegressionResult(weights, in_error, out_error);
+      window.drawRegressionComplete(weights, lr, plane, transformedDataSet);
+    };
+
+    window.initCanvas();
+    lr.regression(transformedDataSet, completeCallback);
+  }
+
+  window.run_lr_reg = function(in_sample_text, out_sample_text, k) {
+    var dataSet = window.getDataSetFromLineArray(window.lineArray(in_sample_text));
+    var transformedDataSet = window.transformDataSet(dataSet, transform);
+    var outSampleDataSet = window.getDataSetFromLineArray(window.lineArray(out_sample_text));
+    var transformedOutSampleDataSet = window.transformDataSet(outSampleDataSet, transform);
+
+    var lr = new window.Linear_Regression();
+
+    var completeCallback = function(weights) {
+      window.drawDataSet(dataSet);
+
+      var in_error = window.getErrorFraction(lr, transformedDataSet);
+      var out_error = window.getErrorFraction(lr, transformedOutSampleDataSet);
+
+      window.displayRegressionResult(weights, in_error, out_error);
+      window.drawRegressionComplete(weights, lr, plane, transformedDataSet);
+    };
+
+    window.initCanvas();
+    lr.regressionWithRegularization(transformedDataSet, Math.pow(10, k), completeCallback);
+  }
+
+  window.displayRegressionResult = function(weights, in_error, out_error) {
+    var status = 'Weight: ' + window.joinWithRounding(weights, 4) + '\r\n'
+               + 'In sample error: ' + '\r\n' + in_error + '\r\n'
+               + 'Out of sample error: ' + '\r\n' + out_error;
+    $('#status').val(status);
+  }
+
+  window.getErrorFraction = function(lr, dataSet) {
+    var errorPointCount = 0;
+    for(var i in dataSet) {
+      if(dataSet[i].output !== Math.sign(lr.getOutput(dataSet[i].point))) errorPointCount += 1;
+    }
+    return errorPointCount / dataSet.length;
+  }
+
+  window.drawRegressionResult = function(weights, plane){
+    // I'm too lazy to finish this....
+  }
+
+  window.initCanvas();
+  $('#run_lr').on('click', function() { window.run_lr($('#in_sample').val(), $('#out_sample').val()); });
+  $('#run_lr_reg').on('click', function() { window.run_lr_reg($('#in_sample').val(), $('#out_sample').val(), $('#k').val()); });
+</script>
+</body>
+</html>
