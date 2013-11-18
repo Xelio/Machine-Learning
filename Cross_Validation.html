@@ -1,0 +1,112 @@
+<html>
+<head>
+</head>
+<body>
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script type="text/JavaScript" src="./js/lib/jsDraw2D.js"></script>
+<script type="text/JavaScript" src="./js/drawing.js"></script>
+<script type="text/JavaScript" src="./js/lib/math.min.js"></script>
+<script type="text/JavaScript" src="./js/TestPlane.js"></script>
+<script type="text/JavaScript" src="./js/PLA.js"></script>
+<script type="text/JavaScript" src="./js/Linear_Regression.js"></script>
+<script type="text/JavaScript" src="./js/Quadratic_Function_Solver.js"></script>
+
+<div id="control">
+  <div style="position:relative; width: 700px; height: 160px;">
+    <div style="position:absolute; width: 350px; left: 0;">
+      <textarea id="in_sample" rows="8" cols="40"></textarea>
+      <div><label for="in_sample">Training sample</label></div>
+    </div>
+  </div>
+  <div>
+    <button id="run_cv">Cross Validation</button>
+  </div>
+</div>
+<div style="position:relative;">
+  <div style="position:absolute; width: 350px;">
+    <textarea id="status" readonly rows="10" cols="40"></textarea>
+  </div>
+</div>
+<script type="text/JavaScript">
+
+  var add_w0 = function(point) {
+    return [1,point[0]];
+  };
+
+  var w0 = function(point) {
+    return [1];
+  };
+
+  window.transformDataSet = function(dataSet, transformFunction) {
+    var result = [];
+    for(var i in dataSet) {
+      result.push({point: transformFunction(dataSet[i].point), output: dataSet[i].output});
+    }
+    return result;
+  }
+
+  window.lineArray = function(text) {
+    return text.split('\n');
+  }
+
+  window.getDataSetFromLineArray = function(lineArray) {
+    var result = [];
+    for(var i in lineArray) {
+      var line = lineArray[i];
+      if(!line || line === '') continue;
+
+      var matched = line.match(/\s*\S+/g)
+      if(!matched) continue;
+
+      var point = [];
+      for(var j = 0; j < matched.length -1; j++) {
+        point.push(parseFloat(matched[j].trim()));
+      }
+      var output = parseFloat(matched[matched.length -1].trim());
+      result.push({point: point, output: output});
+    }
+    return result;
+  }
+
+  window.crossValidation = function(in_sample_text) {
+    var dataSet = window.getDataSetFromLineArray(window.lineArray(in_sample_text));
+    var dataSetAddw0 = window.transformDataSet(dataSet, add_w0);
+    var dataSetw0 = window.transformDataSet(dataSet, w0);
+
+    var eAddw0 = [];
+    var ew0 = [];
+
+    for(var i in dataSet) {
+      var leftDataSetAddw0 = dataSetAddw0.slice(0);
+      leftDataSetAddw0.splice(i, 1);
+      var leftDataSetw0 = dataSetw0.slice(0);
+      leftDataSetw0.splice(i, 1);
+      
+      var lrAddw0 = new window.Linear_Regression();
+      var lrw0 = new window.Linear_Regression();
+
+      lrAddw0.regression(leftDataSetAddw0);
+      lrw0.regression(leftDataSetw0);
+
+      eAddw0.push({point:dataSetAddw0[i]});
+      var eAddw0 = window.squareError(lrAddw0.getOutput(dataSetAddw0[i].point), dataSetAddw0[i].output);
+      totaleAddw0 += eAddw0;
+      var ew0 = window.squareError(lrw0.getOutput(dataSetw0[i].point), dataSetw0[i].output);
+      totalew0 += ew0;
+    }
+    var avgeAddw0 = totaleAddw0 / dataSet.length;
+    var avgew0 = totalew0 / dataSet.length;
+
+    var status = 'Cross validation error h(x) = ax+b: ' + '\r\n' + avgeAddw0 + '\r\n'
+               + 'Cross validation error h(x) = b: ' + '\r\n' + avgew0 + '\r\n';
+    $('#status').val(status);
+  }
+  
+  window.squareError = function(a,b) {
+    return Math.pow((a-b), 2);
+  }
+
+  $('#run_cv').on('click', function() { window.crossValidation($('#in_sample').val()); });
+</script>
+</body>
+</html>
